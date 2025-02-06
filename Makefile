@@ -28,7 +28,7 @@ BUILD_OPTS = \
 	--build-arg PKG=$(PKG) \
 	--build-arg SRC=$(SRC) \
 	--build-arg TAG=$(TAG:$(BUILD_META)=) \
-	--tag "$(IMAGE)-exp1"
+	--tag "$(IMAGE)"
 
 .PHONY: image-build
 image-build:
