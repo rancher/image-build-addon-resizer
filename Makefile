@@ -13,7 +13,7 @@ endif
 
 BUILD_META=-build$(shell date +%Y%m%d)
 PKG ?= github.com/kubernetes/autoscaler
-SRC ?= github.com/kubernetes/autoscaler
+SRC ?= github.com/rancher/release-autoscaler
 TAG ?= ${GITHUB_ACTION_TAG}
 export DOCKER_BUILDKIT?=1
 

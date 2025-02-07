@@ -9,7 +9,7 @@ RUN set -x && \
 
 FROM base AS builder
 ARG TARGETARCH
-ARG SRC=github.com/kubernetes/autoscaler
+ARG SRC=github.com/rancher/release-autoscaler-addon-resizer
 ARG PKG=github.com/kubernetes/autoscaler
 RUN git clone https://${SRC}.git $GOPATH/src/${PKG}
 ARG TAG=1.8.22
