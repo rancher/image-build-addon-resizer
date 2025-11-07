@@ -18,6 +18,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     steps:
       - name: Checkout
+        fetch-depth: 0
         uses: actions/checkout@v5
 
       - name: Install Go
