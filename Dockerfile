@@ -18,6 +18,9 @@ RUN git branch -a
 RUN git checkout addon-resizer-${TAG} -b ${TAG}
 RUN ls
 
+COPY go-mod-overrides ./go-mod-overrides
+RUN go-mod-overrides.sh ./go-mod-overrides
+
 RUN GIT_COMMIT=$(git rev-parse --short HEAD) \
     GOARCH=${TARGETARCH} \
     GO_LDFLAGS="-linkmode=external \
