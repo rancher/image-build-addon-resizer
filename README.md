@@ -1,2 +1,2 @@
 # image-build-addon-resizer
-This repo build the hardened-addon-resizer
+This repo build the hardened-addon-resizer from upstream [kubernetes/autoscaler](https://github.com/kubernetes/autoscaler) sub image, which gets published upstream as `registry.k8s.io/addon-resizer`.
