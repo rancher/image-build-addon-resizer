@@ -1,4 +1,4 @@
-ARG GO_IMAGE=rancher/hardened-build-base:v1.25.11b1
+ARG GO_IMAGE=rancher/hardened-build-base:v1.25.12b1
 
 FROM ${GO_IMAGE} AS base
 
@@ -17,6 +17,9 @@ WORKDIR $GOPATH/src/${PKG}/addon-resizer
 RUN git branch -a
 RUN git checkout addon-resizer-${TAG} -b ${TAG}
 RUN ls
+
+COPY go-mod-overrides ./go-mod-overrides
+RUN go-mod-overrides.sh ./go-mod-overrides
 
 RUN GIT_COMMIT=$(git rev-parse --short HEAD) \
     GOARCH=${TARGETARCH} \
