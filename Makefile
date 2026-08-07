@@ -18,7 +18,7 @@ TAG ?= ${GITHUB_ACTION_TAG}
 export DOCKER_BUILDKIT?=1
 
 ifeq ($(TAG),)
-TAG := 1.8.23$(BUILD_META)
+TAG := 1.8.24$(BUILD_META)
 endif
 
 REPO ?= rancher
