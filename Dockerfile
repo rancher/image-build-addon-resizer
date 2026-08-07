@@ -12,7 +12,7 @@ ARG TARGETARCH
 ARG SRC=github.com/kubernetes/autoscaler
 ARG PKG=github.com/kubernetes/autoscaler
 RUN git clone https://${SRC}.git $GOPATH/src/${PKG}
-ARG TAG=1.8.23
+ARG TAG=1.8.24
 WORKDIR $GOPATH/src/${PKG}/addon-resizer
 RUN git branch -a
 RUN git checkout addon-resizer-${TAG} -b ${TAG}
