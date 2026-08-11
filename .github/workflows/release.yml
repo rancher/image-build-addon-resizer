@@ -3,18 +3,24 @@ on:
     types: [published]
 
 env:
-  GITHUB_ACTION_TAG: ${{ github.ref_name }}
+  GITHUB_ACTION_TAG: ${{ github.event.release.tag_name }}
 
 jobs:
-  push-multiarch:
+  build-amd64-digest:
     permissions:
       contents: read
       id-token: write
-
     runs-on: ubuntu-latest
     steps:
     - name: Check out code
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+    - name: Set the ENV values
+      id: get-envs
+      run: |
+        echo "$(make -s log | grep BUILDDIR)" >> "$GITHUB_ENV"
+        echo "$(make -s log | grep TAG)" >> "$GITHUB_ENV"
+        echo "$(make -s log | grep REGISTRY_IMAGE)" >> "$GITHUB_ENV"
 
     - name: "Read secrets"
       uses: rancher-eio/read-vault-secrets@0da85151ad1f19ed7986c41587e45aac1ace74b6 # v3
@@ -29,11 +35,13 @@ jobs:
           secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials username | STAGING_REGISTRY_USERNAME ;
           secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials password | STAGING_REGISTRY_PASSWORD ;
 
-    - name: Build and Push image - Staging
-      uses: rancher/ecm-distro-tools/actions/publish-image@b558c3371d4a363f131e31a87d5c47dae2bbebe7 # v0.75.1
+    - name: Build and push container image - Staging
+      id: build-amd64-staging
+      uses: rancher/ecm-distro-tools/actions/publish-image@e9b6789032dbe9e289ccc6f7532da8fd349922b3 # v0.75.0
       with:
-        image: "hardened-addon-resizer"
+        image: hardened-addon-resizer
         tag: ${{ github.event.release.tag_name }}
+        platforms: linux/amd64
         push-to-public: false
 
         prime-repo: rancher
@@ -42,11 +50,13 @@ jobs:
         prime-username: ${{ env.STAGING_REGISTRY_USERNAME }}
         prime-password: ${{ env.STAGING_REGISTRY_PASSWORD }}
 
-    - name: Build and Push image
-      uses: rancher/ecm-distro-tools/actions/publish-image@b558c3371d4a363f131e31a87d5c47dae2bbebe7 # v0.75.1
+    - name: Build and push container image
+      id: build-amd64
+      uses: rancher/ecm-distro-tools/actions/publish-image@e9b6789032dbe9e289ccc6f7532da8fd349922b3 # v0.75.0
       with:
-        image: "hardened-addon-resizer"
+        image: hardened-addon-resizer
         tag: ${{ github.event.release.tag_name }}
+        platforms: linux/amd64
 
         public-repo: rancher
         public-username: ${{ env.DOCKER_USERNAME }}
@@ -57,3 +67,152 @@ jobs:
         prime-registry: ${{ env.PRIME_REGISTRY }}
         prime-username: ${{ env.PRIME_REGISTRY_USERNAME }}
         prime-password: ${{ env.PRIME_REGISTRY_PASSWORD }}
+
+    - name: Upload metadata files
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: metadata-amd64
+        path: ${{ env.BUILDDIR }}
+        if-no-files-found: error
+        retention-days: 1
+
+  build-arm64-digest:
+    permissions:
+      contents: read
+      id-token: write
+    runs-on: ubuntu-24.04-arm
+    steps:
+    - name: Check out code
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+    - name: Set the ENV values
+      id: get-envs
+      run: |
+        echo "$(make -s log | grep BUILDDIR)" >> "$GITHUB_ENV"
+        echo "$(make -s log | grep TAG)" >> "$GITHUB_ENV"
+        echo "$(make -s log | grep REGISTRY_IMAGE)" >> "$GITHUB_ENV"
+
+    - name: "Read secrets"
+      uses: rancher-eio/read-vault-secrets@0da85151ad1f19ed7986c41587e45aac1ace74b6 # v3
+      with:
+        secrets: |
+          secret/data/github/repo/${{ github.repository }}/dockerhub/${{ github.repository_owner }}/credentials username | DOCKER_USERNAME ;
+          secret/data/github/repo/${{ github.repository }}/dockerhub/${{ github.repository_owner }}/credentials password | DOCKER_PASSWORD ;
+          secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials registry | PRIME_REGISTRY ;
+          secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials username | PRIME_REGISTRY_USERNAME ;
+          secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials password | PRIME_REGISTRY_PASSWORD ;
+          secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials registry | STAGING_REGISTRY ;
+          secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials username | STAGING_REGISTRY_USERNAME ;
+          secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials password | STAGING_REGISTRY_PASSWORD ;
+
+    - name: Build and push container image - Staging
+      id: build-arm64-staging
+      uses: rancher/ecm-distro-tools/actions/publish-image@e9b6789032dbe9e289ccc6f7532da8fd349922b3 # v0.75.0
+      with:
+        image: hardened-addon-resizer
+        tag: ${{ github.event.release.tag_name }}
+        platforms: linux/arm64
+        push-to-public: false
+
+        prime-repo: rancher
+        prime-make-target: push-prime-image
+        prime-registry: ${{ env.STAGING_REGISTRY }}
+        prime-username: ${{ env.STAGING_REGISTRY_USERNAME }}
+        prime-password: ${{ env.STAGING_REGISTRY_PASSWORD }}
+
+    - name: Build and push container image
+      id: build-arm64
+      uses: rancher/ecm-distro-tools/actions/publish-image@e9b6789032dbe9e289ccc6f7532da8fd349922b3 # v0.75.0
+      with:
+        image: hardened-addon-resizer
+        tag: ${{ github.event.release.tag_name }}
+        platforms: linux/arm64
+
+        public-repo: rancher
+        public-username: ${{ env.DOCKER_USERNAME }}
+        public-password: ${{ env.DOCKER_PASSWORD }}
+
+        prime-repo: rancher
+        prime-make-target: push-prime-image
+        prime-registry: ${{ env.PRIME_REGISTRY }}
+        prime-username: ${{ env.PRIME_REGISTRY_USERNAME }}
+        prime-password: ${{ env.PRIME_REGISTRY_PASSWORD }}
+
+    - name: Upload metadata files
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: metadata-arm64
+        path: ${{ env.BUILDDIR }}
+        if-no-files-found: error
+        retention-days: 1
+
+  merge:
+    permissions:
+      contents: read
+      id-token: write
+    runs-on: ubuntu-latest
+    needs:
+      - build-amd64-digest
+      - build-arm64-digest
+    steps:
+    - name: Check out code
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+    - name: Set the ENV values
+      id: get-envs
+      run: |
+        echo "$(make -s log | grep BUILDDIR)" >> "$GITHUB_ENV"
+        echo "$(make -s log | grep REGISTRY_IMAGE)" >> "$GITHUB_ENV"
+
+    - name: Download metadata files
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      with:
+        path: ${{ env.BUILDDIR }}
+        merge-multiple: true
+
+    - name: "Read secrets"
+      uses: rancher-eio/read-vault-secrets@0da85151ad1f19ed7986c41587e45aac1ace74b6 # v3
+      with:
+        secrets: |
+          secret/data/github/repo/${{ github.repository }}/dockerhub/${{ github.repository_owner }}/credentials username | DOCKER_USERNAME ;
+          secret/data/github/repo/${{ github.repository }}/dockerhub/${{ github.repository_owner }}/credentials password | DOCKER_PASSWORD ;
+          secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials registry | PRIME_REGISTRY ;
+          secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials username | PRIME_REGISTRY_USERNAME ;
+          secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials password | PRIME_REGISTRY_PASSWORD ;
+          secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials registry | STAGING_REGISTRY ;
+          secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials username | STAGING_REGISTRY_USERNAME ;
+          secret/data/github/repo/${{ github.repository }}/rancher-prime-stg-registry/credentials password | STAGING_REGISTRY_PASSWORD ;
+
+    - name: Create manifest list and push - Staging
+      uses: rancher/ecm-distro-tools/actions/publish-image@e9b6789032dbe9e289ccc6f7532da8fd349922b3 # v0.75.0
+      env:
+        MULTI_ARCH: "amd64 arm64"
+      with:
+        make-target: manifest-push
+        image: hardened-addon-resizer
+        tag: ${{ github.event.release.tag_name }}
+        push-to-public: false
+
+        prime-repo: rancher
+        prime-registry: ${{ env.STAGING_REGISTRY }}
+        prime-username: ${{ env.STAGING_REGISTRY_USERNAME }}
+        prime-password: ${{ env.STAGING_REGISTRY_PASSWORD }}
+
+    - name: Create manifest list and push
+      uses: rancher/ecm-distro-tools/actions/publish-image@e9b6789032dbe9e289ccc6f7532da8fd349922b3 # v0.75.0
+      env:
+        MULTI_ARCH: "amd64 arm64"
+      with:
+        make-target: manifest-push
+        image: hardened-addon-resizer
+        tag: ${{ github.event.release.tag_name }}
+
+        public-repo: rancher
+        public-username: ${{ env.DOCKER_USERNAME }}
+        public-password: ${{ env.DOCKER_PASSWORD }}
+
+        prime-repo: rancher
+        prime-registry: ${{ env.PRIME_REGISTRY }}
+        prime-username: ${{ env.PRIME_REGISTRY_USERNAME }}
+        prime-password: ${{ env.PRIME_REGISTRY_PASSWORD }}
+

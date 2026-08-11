@@ -1,14 +1,13 @@
 SEVERITIES = HIGH,CRITICAL
 
 UNAME_M = $(shell uname -m)
-ifndef TARGET_PLATFORMS
-	ifeq ($(UNAME_M), x86_64)
-		TARGET_PLATFORMS:=linux/amd64
-	else ifeq ($(UNAME_M), aarch64)
-		TARGET_PLATFORMS:=linux/arm64
-	else 
-		TARGET_PLATFORMS:=linux/$(UNAME_M)
-	endif
+ARCH =
+ifeq ($(UNAME_M), x86_64)
+	ARCH = amd64
+else ifeq ($(UNAME_M), aarch64)
+	ARCH = arm64
+else
+	ARCH = $(UNAME_M)
 endif
 
 BUILD_META=-build$(shell date +%Y%m%d)
@@ -22,13 +21,31 @@ TAG := 1.8.24$(BUILD_META)
 endif
 
 REPO ?= rancher
-IMAGE = $(REPO)/hardened-addon-resizer:$(TAG)
+IMAGE_NAME = hardened-addon-resizer
+REGISTRY_IMAGE = $(REPO)/$(IMAGE_NAME)
+IMAGE = $(REGISTRY_IMAGE):$(TAG)
+
+BUILDDIR ?= $(CURDIR)/build
+METADATA_FILE ?= $(BUILDDIR)/$(subst /,-,$(REGISTRY_IMAGE))-$(ARCH).metadata.json
+IID_FILE_FLAG ?=
+IID_FILE_PATH := $(if $(IID_FILE_FLAG),$(word 2, $(IID_FILE_FLAG)))
+MACHINE := rancher
+
 BUILD_OPTS = \
-	--platform=$(TARGET_PLATFORMS) \
+	--platform=linux/$(ARCH) \
 	--build-arg PKG=$(PKG) \
 	--build-arg SRC=$(SRC) \
 	--build-arg TAG=$(TAG:$(BUILD_META)=) \
+	--tag "$(IMAGE)-$(ARCH)" \
 	--tag "$(IMAGE)"
+
+$(BUILDDIR):
+	mkdir -p $(BUILDDIR)
+
+.PHONY: buildx-machine
+buildx-machine:
+	docker buildx inspect $(MACHINE) > /dev/null 2>&1 || \
+		docker buildx create --name=$(MACHINE) --platform=linux/arm64,linux/amd64
 
 .PHONY: image-build
 image-build:
@@ -38,9 +55,10 @@ image-build:
 		.
 
 .PHONY: push-image
-push-image:
+push-image: $(BUILDDIR)
 	docker buildx build \
 		$(BUILD_OPTS) \
+		--metadata-file $(METADATA_FILE) \
 		$(IID_FILE_FLAG) \
 		$(BUILDX_ARGS) \
 		--push \
@@ -50,6 +68,28 @@ push-image:
 push-prime-image:
 	BUILDX_ARGS="--sbom=true --attest type=provenance,mode=max" \
 	$(MAKE) push-image
+
+.PHONY: manifest-push
+manifest-push: $(BUILDDIR) | buildx-machine
+	if [ -n "$(MULTI_ARCH)" ]; then \
+		d=""; \
+		for a in $(MULTI_ARCH); do \
+			f=$(BUILDDIR)/$(subst /,-,$(REGISTRY_IMAGE))-$$a.metadata.json; \
+			d="$$d $$(jq -r '.["containerimage.digest"]' $$f)"; \
+		done; \
+		docker buildx imagetools create \
+			--builder=$(MACHINE) \
+			-t $(IMAGE) \
+			$$d; \
+	else \
+		docker buildx imagetools create \
+			--builder=$(MACHINE) \
+			-t $(IMAGE) \
+			$$(jq -r '.["containerimage.digest"]' $(METADATA_FILE)); \
+	fi
+ifneq ($(strip $(IID_FILE_PATH)),)
+	docker buildx imagetools inspect --format "{{json .Manifest}}" $(IMAGE) | jq -r '.digest' > "$(IID_FILE_PATH)"
+endif
 
 .PHONY: image-scan
 image-scan:
@@ -64,5 +104,7 @@ log:
 	@echo "SRC=$(SRC)"
 	@echo "BUILD_META=$(BUILD_META)"
 	@echo "UNAME_M=$(UNAME_M)"
-	@echo "TARGET_PLATFORMS=$(TARGET_PLATFORMS)"
+	@echo "ARCH=$(ARCH)"
+	@echo "BUILDDIR=$(BUILDDIR)"
+	@echo "REGISTRY_IMAGE=$(REGISTRY_IMAGE)"
 
