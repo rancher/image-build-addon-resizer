@@ -29,20 +29,13 @@ RUN ls
 COPY go-mod-overrides ./go-mod-overrides
 RUN go-mod-overrides.sh ./go-mod-overrides
 
-RUN GIT_COMMIT=$(git rev-parse --short HEAD) && \
-    if [ "${TARGETARCH}" = "amd64" ]; then \
-        GOARCH=${TARGETARCH} \
-        GO_LDFLAGS="-linkmode=external \
-        -X ${PKG}/pkg/version.GitCommit=${GIT_COMMIT} \
-        -X ${PKG}/pkg/version.Version=${TAG} \
-        " go-build-static.sh -gcflags=-trimpath=${GOPATH}/src -o pod_nanny ./nanny/main/; \
-    else \
-        CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
-        go build \
-        -ldflags "-extldflags \"-static\" -X ${PKG}/pkg/version.GitCommit=${GIT_COMMIT} -X ${PKG}/pkg/version.Version=${TAG}" \
-        -gcflags=-trimpath=${GOPATH}/src \
-        -o pod_nanny ./nanny/main/; \
-    fi
+RUN GIT_COMMIT=$(git rev-parse --short HEAD) \
+    GOOS=${TARGETOS} \
+    GOARCH=${TARGETARCH} \
+    GO_LDFLAGS="-linkmode=external \
+    -X ${PKG}/pkg/version.GitCommit=${GIT_COMMIT} \
+    -X ${PKG}/pkg/version.Version=${TAG} \
+    " go-build-static.sh -gcflags=-trimpath=${GOPATH}/src -o pod_nanny ./nanny/main/
 
 RUN go-assert-static.sh pod_nanny
 RUN if [ "${TARGETARCH}" = "amd64" ]; then \
