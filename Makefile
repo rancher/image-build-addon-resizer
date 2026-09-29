@@ -11,8 +11,6 @@ else
 endif
 
 BUILD_META=-build$(shell date +%Y%m%d)
-PKG ?= github.com/kubernetes/autoscaler
-SRC ?= github.com/kubernetes/autoscaler
 TAG ?= ${GITHUB_ACTION_TAG}
 export DOCKER_BUILDKIT?=1
 
@@ -33,8 +31,6 @@ MACHINE := rancher
 
 BUILD_OPTS = \
 	--platform=linux/$(ARCH) \
-	--build-arg PKG=$(PKG) \
-	--build-arg SRC=$(SRC) \
 	--build-arg TAG=$(TAG:$(BUILD_META)=) \
 	--tag "$(IMAGE)-$(ARCH)" \
 	--tag "$(IMAGE)"
@@ -100,8 +96,6 @@ log:
 	@echo "TAG=$(TAG:$(BUILD_META)=)"
 	@echo "REPO=$(REPO)"
 	@echo "IMAGE=$(IMAGE)"
-	@echo "PKG=$(PKG)"
-	@echo "SRC=$(SRC)"
 	@echo "BUILD_META=$(BUILD_META)"
 	@echo "UNAME_M=$(UNAME_M)"
 	@echo "ARCH=$(ARCH)"
