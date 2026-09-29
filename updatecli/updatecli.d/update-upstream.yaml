@@ -20,26 +20,15 @@ sources:
       - trimprefix: "addon-resizer-"
 
 targets:
-  dockerfile:
-    name: 'Bump Dockerfile to upstream version {{ source "upstream" }}'
-    kind: dockerfile
-    scmid: default
-    sourceid: upstream
-    spec:
-      file: "Dockerfile"
-      instruction:
-        keyword: "ARG"
-        matcher: "TAG"
-
-  makefile:
-    name: 'Bump Makefile to upstream version {{ source "upstream" }}'
+  tagfile:
+    name: 'Bump TAG to upstream version {{ source "upstream" }}'
     kind: file
     scmid: default
     disablesourceinput: true
     spec:
-      file: Makefile
-      matchpattern: '(?m)^TAG \:\= (.*)'
-      replacepattern: 'TAG := {{ source "upstream" }}$$(BUILD_META)'
+      file: TAG
+      matchpattern: '(?m)^(.+)$'
+      replacepattern: '{{ source "upstream" }}'
 
 scms:
   default:
