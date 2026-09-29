@@ -9,9 +9,8 @@ RUN set -x && \
 
 FROM base AS builder
 ARG TARGETARCH
-ARG SRC=github.com/kubernetes/autoscaler
 ARG PKG=github.com/kubernetes/autoscaler
-RUN git clone https://${SRC}.git $GOPATH/src/${PKG}
+RUN git clone https://${PKG}.git $GOPATH/src/${PKG}
 ARG TAG=1.8.24
 WORKDIR $GOPATH/src/${PKG}/addon-resizer
 RUN git branch -a
