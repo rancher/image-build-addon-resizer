@@ -57,6 +57,7 @@ jobs:
         image: hardened-addon-resizer
         tag: ${{ github.event.release.tag_name }}
         platforms: linux/amd64
+        skip-buildx-setup: true
 
         public-repo: rancher
         public-username: ${{ env.DOCKER_USERNAME }}
@@ -127,6 +128,7 @@ jobs:
         image: hardened-addon-resizer
         tag: ${{ github.event.release.tag_name }}
         platforms: linux/arm64
+        skip-buildx-setup: true
 
         public-repo: rancher
         public-username: ${{ env.DOCKER_USERNAME }}
