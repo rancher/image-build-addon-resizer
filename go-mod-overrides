@@ -1,11 +1,12 @@
-# golang.org/x/net: CVE-2026-33814 (net/http2 DoS), CVE-2026-39821 (x/net/idna punycode), CVE-2026-46600 (x/net/dns/dnsmessage panic parsing invalid SVCB or HTTPS RR).
-# Drop once upstream requires golang.org/x/net >= v0.56.0.
--replace golang.org/x/net=golang.org/x/net@v0.56.0
+# golang.org/x/net: CVE-2026-33814 (net/http2 DoS), CVE-2026-39821 (x/net/idna punycode), CVE-2026-46600 (x/net/dns/dnsmessage panic parsing invalid SVCB or HTTPS RR),
+# CVE-2026-78659, CVE-2026-78660, CVE-2026-78663, CVE-2026-78669, CVE-2026-97032 (x/net/http2 DoS/crash).
+# Drop once upstream requires golang.org/x/net >= v0.60.0.
+-replace golang.org/x/net=golang.org/x/net@v0.60.0
 
-# golang.org/x/oauth2: CVE-2025-22868 (golang.org/x/oauth2/jws unexpected memory consumption during token parsing).
-# Drop once upstream requires golang.org/x/oauth2 >= v0.27.0.
--replace golang.org/x/oauth2=golang.org/x/oauth2@v0.27.0
+# golang.org/x/text: CVE-2026-56852 (infinite loop on invalid input), CVE-2026-56851 (x/text/secure/precis panic parsing crafted input).
+# Drop once upstream requires golang.org/x/text >= v0.42.0.
+-replace golang.org/x/text=golang.org/x/text@v0.42.0
 
-# golang.org/x/text: CVE-2026-56852 (infinite loop on invalid input).
-# Drop once upstream requires golang.org/x/text >= v0.39.0.
--replace golang.org/x/text=golang.org/x/text@v0.39.0
+# go.opentelemetry.io/otel: CVE-2026-41178 (baggage parsing no longer caps raw header length).
+# Drop once upstream requires go.opentelemetry.io/otel >= v1.42.0.
+-replace go.opentelemetry.io/otel=go.opentelemetry.io/otel@v1.42.0
